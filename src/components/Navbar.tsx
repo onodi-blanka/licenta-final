@@ -3,7 +3,7 @@ import { useAuth } from '../authContext/index';
 import Link from 'next/link';
 
 const Navbar = () => {
-  const { userLoggedIn, logout } = useAuth();
+  const { userLoggedIn, logout, currentUser } = useAuth();
 
   return (
     <nav className="bg-green-900 text-white p-4 flex flex-row w-full">
@@ -13,9 +13,12 @@ const Navbar = () => {
         </div>
         <div className="">
           {userLoggedIn ? (
-            <button onClick={logout} className="hover:underline">
-              Log Out
-            </button>
+            <div className="flex flex-row gap-4">
+              {currentUser.email}
+              <button onClick={logout} className="hover:underline">
+                Log Out
+              </button>
+            </div>
           ) : (
             <div className="flex flex-row gap-4">
               <Link href="/signup" className="hover:underline">

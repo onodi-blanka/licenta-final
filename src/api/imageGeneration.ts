@@ -1,6 +1,10 @@
-import { myMockResponse } from '../myMockDog';
+import { myMockResponse } from '@/myMockDog';
+import { ImageSizes } from '@/app/hooks/useFetchOpenAIImage';
 
-export const fetchFromChatGPTAPI = async (myPrompt: string) => {
+export const fetchFromChatGPTAPI = async (
+  myPrompt: string,
+  sizing: ImageSizes,
+) => {
   console.log('Prompt received by mock API:', myPrompt);
 
   // Uncomment and use this code when you want to fetch from the actual API
@@ -17,7 +21,7 @@ export const fetchFromChatGPTAPI = async (myPrompt: string) => {
         model: 'dall-e-3',
         prompt: myPrompt,
         n: 1,
-        size: '1792x1024',
+        size: sizing,
         style: 'vivid',
       }),
     },
@@ -31,9 +35,9 @@ export const fetchFromChatGPTAPI = async (myPrompt: string) => {
   // const myResp = await new Promise((resolve) => {
   //   setTimeout(() => {
   //     // This simulates the response we would get from the ChatGPT API
-  //     resolve({ myMockResponse });
+  //     resolve(myMockResponse);
   //   }, 1000);
   // });
-
+  //
   return myResp;
 };

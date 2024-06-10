@@ -1,11 +1,11 @@
 'use client';
 import React, { useState } from 'react';
 import trees from '../assets/trees.jpg';
-// import Link from '../components/Link';
-import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
+import { doCreateUserWithEmailAndPassword } from '@/firebase/auth';
 import MyInput from '../../components/MyInput';
 import Image from 'next/image';
 import Link from 'next/link';
+import {useRouter} from "next/navigation";
 interface Account {
   username: string;
   password: string;
@@ -18,6 +18,8 @@ export default function SignUp() {
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [rememberMe, setRememberMe] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  const router = useRouter();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -47,6 +49,7 @@ export default function SignUp() {
           );
           accounts.push({ username: email, password });
           localStorage.setItem('accounts', JSON.stringify(accounts));
+          router.push('/')
         }
       } else {
         // Handle error

@@ -1,35 +1,32 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import MyImg from '../../components/MyImg';
-import { useFetchImage } from '../hooks/useFetchOpenAIImage';
+import { ImageSizes, useFetchImage } from '../hooks/useFetchOpenAIImage';
 import { usePicturesByUser } from '../hooks/firebase/usePictures';
-import { auth, storage } from '../../firebase/firebase';
+import { auth, db, storage } from '@/firebase/firebase';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
-
-const fetchImageAsBase64 = async (imageUrl: string): Promise<string> => {
-  const response = await fetch(
-    `http://localhost:3000/fetch-image?url=${encodeURIComponent(imageUrl)}`,
-  );
-  const data = await response.json();
-  return `data:image/png;base64,${data.base64Image}`;
-};
+import { User } from 'firebase/auth';
+import { addDoc, collection } from 'firebase/firestore';
+import { LuRectangleHorizontal } from 'react-icons/lu';
+import { LuRectangleVertical } from 'react-icons/lu';
+import { LuSquare } from 'react-icons/lu';
 
 export default function CreateWallpaper() {
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState<string>('');
+  const [sizing, setSizing] = useState<ImageSizes>('1024x1024');
   const { image, isLoading, fetchImage } = useFetchImage();
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { addPicture, loading, error } = usePicturesByUser(
     currentUser?.uid || '',
   );
   const router = useRouter();
-  console.log(currentUser);
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
@@ -38,31 +35,47 @@ export default function CreateWallpaper() {
   };
 
   const handleGenerateImage = async () => {
-    await fetchImage(prompt);
+    try {
+      await fetchImage(prompt, sizing);
+    } catch (error) {
+      console.error('Error generating image:', error);
+    }
   };
 
   const handleSaveToFirebase = async () => {
     if (image && currentUser) {
       try {
-        const base64Image = await fetchImageAsBase64(image);
+        console.log(currentUser);
         const imageName = `wallpapers/${Date.now()}.png`;
         const imageRef = ref(storage, imageName);
-
-        await uploadString(imageRef, base64Image, 'data_url', {
-          contentType: 'image/png',
-        });
+        await uploadString(imageRef, image, 'data_url');
         const imageUrl = await getDownloadURL(imageRef);
 
-        await addPicture({
+        await addDoc(collection(db, 'pictures'), {
           imageUrl,
           prompt,
-          createdBy: currentUser.uid,
+          createdBy: {
+            userId: currentUser.uid,
+            userEmail: currentUser.email,
+          },
           createdAt: new Date(),
+          likesCount: 0,
+          groups: [],
         });
 
-        console.log('Image saved to Firebase');
-      } catch (error) {
-        console.error('Error saving image to Firebase:', error);
+        console.log('Image saved to Firebase:', imageUrl);
+        router.push('/');
+      } catch (error: any) {
+        if (error.code === 'permission-denied') {
+          // Specific error message for permission issues
+          console.error(
+            'Error saving image to Firebase (permission denied):',
+            error,
+          );
+          // You can display this error to the user or log it for debugging
+        } else {
+          console.error('Error saving image to Firebase:', error);
+        }
       }
     }
   };
@@ -84,6 +97,20 @@ export default function CreateWallpaper() {
           onChange={handlePromptChange}></textarea>
 
         <div className="flex flex-col gap-3">
+          <div className="flex flex-row gap-6 self-center">
+            <LuSquare
+              onClick={() => setSizing('1024x1024')}
+              className={`text-3xl ${sizing === '1024x1024' && 'text-green-500 bg-gray-300'} hover:bg-gray-200 cursor-pointer p-1`}
+            />
+            <LuRectangleHorizontal
+              onClick={() => setSizing('1792x1024')}
+              className={`text-3xl ${sizing === '1792x1024' && 'text-green-500 bg-gray-300'} hover:bg-gray-200 cursor-pointer p-1`}
+            />
+            <LuRectangleVertical
+              onClick={() => setSizing('1024x1792')}
+              className={`text-3xl ${sizing === '1024x1792' && 'text-green-500 bg-gray-300'} hover:bg-gray-200 cursor-pointer p-1`}
+            />
+          </div>
           <button
             onClick={handleGenerateImage}
             disabled={isLoading || !prompt}

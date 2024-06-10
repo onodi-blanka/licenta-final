@@ -7,6 +7,7 @@ import MyImg from './MyImg';
 import useDebounce from '../app/hooks/debounce';
 import { useAllPictures } from '../app/hooks/useAllPictures';
 import { useRouter } from 'next/navigation';
+import ImageGrid from '@/components/ImageGrid';
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,24 +66,7 @@ const HomePage: React.FC = () => {
         <MyImg src={currentImage} />
       </div>
 
-      <div className="p-4">
-        {loading && <p>Loading...</p>}
-        {error && <p>Error: {error}</p>}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pictures.map((picture) => (
-            <div key={picture.id} className="bg-white p-4 rounded shadow-md">
-              <img
-                src={picture.imageUrl}
-                alt={picture.prompt || 'Generated Image'}
-                className="w-full h-auto rounded"
-              />
-              <p className="mt-2 text-center">
-                {picture.prompt || 'No prompt available'}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <ImageGrid pictures={pictures} />
     </div>
   );
 };

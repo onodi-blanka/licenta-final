@@ -1,13 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import trees from '../assets/trees.jpg';
+import trees from '@/app/assets/trees.jpg';
 import { FcGoogle } from 'react-icons/fc';
 import { IoLogoFacebook } from 'react-icons/io';
 import {
   doSignInWithEmailAndPassword,
   doSignInWithGoogle,
-} from '../../firebase/auth';
-import { useAuth } from '../../authContext/index';
+} from '@/firebase/auth';
+import { useAuth } from '@/authContext';
 import MyInput from '../../components/MyInput';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
