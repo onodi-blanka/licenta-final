@@ -113,9 +113,9 @@ export default function CreateWallpaper() {
           </div>
           <button
             onClick={handleGenerateImage}
-            disabled={isLoading || !prompt}
+            disabled={isLoading || !prompt || !currentUser}
             className={`w-full py-2 font-bold rounded transition-colors duration-300 ${
-              isLoading || !prompt
+              isLoading || !prompt || !currentUser
                 ? 'bg-gray-200 text-black cursor-not-allowed'
                 : 'bg-green-800 text-white hover:bg-green-900'
             } ${isLoading && 'animate-bounce'}`}>

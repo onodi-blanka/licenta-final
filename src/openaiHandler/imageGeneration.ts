@@ -5,7 +5,7 @@ export const fetchFromChatGPTAPI = async (
   myPrompt: string,
   sizing: ImageSizes,
 ) => {
-  console.log('Prompt received by mock API:', myPrompt);
+  console.log('Prompt received by mock API:', myPrompt, sizing);
 
   // Uncomment and use this code when you want to fetch from the actual API
   const myActualDog = await fetch(
@@ -14,8 +14,7 @@ export const fetchFromChatGPTAPI = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization:
-          // 'Bearer sk-proj-',
+        // Authorization: 'Bearer ',
       },
       body: JSON.stringify({
         model: 'dall-e-3',
@@ -28,9 +27,7 @@ export const fetchFromChatGPTAPI = async (
   );
 
   const data = await myActualDog.json();
-  console.log(data.data[0].url);
   const myResp = data;
-  // return myMockResponse;
 
   // const myResp = await new Promise((resolve) => {
   //   setTimeout(() => {

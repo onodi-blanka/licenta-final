@@ -1,5 +1,5 @@
 import React from 'react';
-
+// TODO: remove
 type MyImgProps = {
   src: string | undefined;
 };

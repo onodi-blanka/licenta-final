@@ -1,19 +1,39 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { IoMdNotifications } from 'react-icons/io';
 import { BiMessageRoundedDetail } from 'react-icons/bi';
 import Dalle3MockAPI from './Dalle3API';
 import MyImg from './MyImg';
 import useDebounce from '../app/hooks/debounce';
-import { useAllPictures } from '../app/hooks/useAllPictures';
+import { usePicturesByUser } from '../app/hooks//firebase/usePictures';
 import { useRouter } from 'next/navigation';
 import ImageGrid from '@/components/ImageGrid';
+import { User } from 'firebase/auth';
+import { auth } from '@/firebase/firebase';
+import { useAllPictures } from '@/app/hooks/useAllPictures';
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 1000);
   const [currentImage, setCurrentImage] = useState<string>('');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [viewPersonalPictures, setViewPersonalPictures] = useState(true);
   const { pictures, loading, error } = useAllPictures();
+
+  // const personalPics = pictures.filter((pic) => {
+  //   return (
+  //     pic.createdBy === currentUser?.uid ||
+  //     pic.createdBy?.userId === currentUser?.uid
+  //   );
+  // });
+
+  useLayoutEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -24,7 +44,11 @@ const HomePage: React.FC = () => {
     router.push('/create');
   };
 
-  console.log('Pictures:', pictures); // Add this line for debugging
+  const handleProfile = () => {
+    router.push('/profile');
+  };
+
+  console.log('Pictures:', pictures);
 
   return (
     <div className="relative w-full h-screen">
@@ -51,7 +75,9 @@ const HomePage: React.FC = () => {
         <button className="px-4 py-2 flex items-center rounded-full border-transparent hover:bg-gray-300">
           <BiMessageRoundedDetail className="text-2xl" />
         </button>
-        <button className="px-4 py-2 flex items-center rounded-full border-transparent hover:bg-gray-300">
+        <button
+          className="px-4 py-2 flex items-center rounded-full border-transparent hover:bg-gray-300"
+          onClick={handleProfile}>
           UserAccount Icon
         </button>
       </div>
@@ -61,11 +87,6 @@ const HomePage: React.FC = () => {
           setCurrentImage={setCurrentImage}
         />
       </div>
-
-      <div>
-        <MyImg src={currentImage} />
-      </div>
-
       <ImageGrid pictures={pictures} />
     </div>
   );

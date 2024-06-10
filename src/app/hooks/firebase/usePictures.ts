@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/firebase/firebase';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
-import { Picture } from '@/types/enitites'; // Ensure this path is correct
+import { Picture } from '@/types/enitites';
 
 export const usePicturesByUser = (userId: string) => {
   const [pictures, setPictures] = useState<Picture[]>([]);
+  // const [allPictures, setAllPictures] = useState<Picture[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,10 +29,7 @@ export const usePicturesByUser = (userId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const q = query(
-        collection(db, 'pictures'),
-        where('createdBy', '==', userId),
-      );
+      const q = query(collection(db, 'pictures'));
       const querySnapshot = await getDocs(q);
       const userPictures: Picture[] = [];
       querySnapshot.forEach((doc) => {
@@ -47,11 +45,37 @@ export const usePicturesByUser = (userId: string) => {
     }
   }, [userId]);
 
+  // const fetchAllPictures = useCallback(async () => {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     const q = query(collection(db, 'pictures'));
+  //     const querySnapshot = await getDocs(q);
+  //     const userPictures: Picture[] = [];
+  //     querySnapshot.forEach((doc) => {
+  //       userPictures.push({ id: doc.id, ...doc.data() } as Picture);
+  //     });
+  //     setAllPictures(userPictures);
+  //   } catch (err) {
+  //     console.log('here it fails');
+  //     console.log(userId);
+  //     setError(err.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [userId]);
+
   useEffect(() => {
     if (userId) {
       fetchPictures();
     }
   }, [userId, fetchPictures]);
 
-  return { pictures, addPicture, loading, error };
+  return {
+    pictures,
+    addPicture,
+    loading,
+    error,
+    // allPictures,
+  };
 };

@@ -5,7 +5,7 @@ import { doCreateUserWithEmailAndPassword } from '@/firebase/auth';
 import MyInput from '../../components/MyInput';
 import Image from 'next/image';
 import Link from 'next/link';
-import {useRouter} from "next/navigation";
+import { useRouter } from 'next/navigation';
 interface Account {
   username: string;
   password: string;
@@ -49,8 +49,8 @@ export default function SignUp() {
           );
           accounts.push({ username: email, password });
           localStorage.setItem('accounts', JSON.stringify(accounts));
-          router.push('/')
         }
+        router.push('/');
       } else {
         // Handle error
         setErrorMessage('Sign up failed. Please try again.');

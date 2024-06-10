@@ -13,6 +13,10 @@ const ImageGrid: React.FC<{ pictures: any[] }> = ({ pictures }) => {
     setSelectedImage(null);
   };
 
+  if (!pictures || pictures.length === 0) {
+    return <p>No pictures found</p>;
+  }
+
   return (
     <div className="p-4">
       {/* ... your loading and error handling ... */}
@@ -51,7 +55,7 @@ const ImageGrid: React.FC<{ pictures: any[] }> = ({ pictures }) => {
           <Image
             src={selectedImage}
             alt="Full Size Image"
-            className="max-w-full max-h-full  h-full w-max"
+            className="max-w-full max-h-full  h-max w-max cursor-pointer"
             width={0}
             height={0}
             sizes={'100vw'}

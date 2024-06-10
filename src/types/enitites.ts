@@ -4,12 +4,18 @@ export interface User {
   email: string;
   profilePictureUrl?: string;
   likedPictures: string[];
+  profilePic: string;
 }
 
 export interface Picture {
   id: string;
   imageUrl: string;
-  createdBy: string;
+  createdBy:
+    | {
+        userId: string;
+        userEmail: string;
+      }
+    | string;
   createdAt: Date;
   likesCount: number;
   groups: string[];

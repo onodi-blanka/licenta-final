@@ -13,12 +13,12 @@ export const useAllPictures = () => {
       setLoading(true);
       setError(null);
 
-      if (!auth.currentUser) {
-        setError('User is not authenticated');
-        console.log('User is not authenticated');
-        setLoading(false);
-        return;
-      }
+      // if (!auth.currentUser) {
+      //   setError('User is not authenticated');
+      //   console.log('User is not authenticated');
+      //   setLoading(false);
+      //   return;
+      // }
 
       try {
         console.log('Fetching pictures from Firestore');

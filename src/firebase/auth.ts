@@ -24,6 +24,7 @@ export const doCreateUserWithEmailAndPassword = async (
     username: email, // You can customize this field as needed
     email: email,
     likedPictures: [],
+    profilePic: '',
   };
 
   // Add user data to Firestore

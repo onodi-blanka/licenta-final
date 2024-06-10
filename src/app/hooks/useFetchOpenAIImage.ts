@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fetchFromChatGPTAPI } from '@/api/imageGeneration';
+import { fetchFromChatGPTAPI } from '@/openaiHandler/imageGeneration';
 import { fetchImageAsBase64 } from '@/utils/fetchImageAsBase64'; // Ensure the correct path
 
 export type ImageSizes = '1024x1024' | '1792x1024' | '1024x1792';
