@@ -4,16 +4,16 @@ import React from 'react';
 import ImageGrid from './ImageGrid';
 
 type CollectionProps = {
-  pictures: Picture[];
+  name: string;
+  handleClick: (collectionId: string) => void;
 };
 
-const Collection = ({ pictures }: CollectionProps) => {
+const Collection = ({ name, handleClick }: CollectionProps) => {
   return (
-    <div>
-      My Collection
-      <div>
-        <ImageGrid pictures={pictures} />
-      </div>
+    <div
+      className="m-5 border border-red-600"
+      onClick={() => handleClick(name)}>
+      My Collection name is: {name}
     </div>
   );
 };

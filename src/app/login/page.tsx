@@ -72,7 +72,7 @@ export default function Login() {
             localStorage.setItem('accounts', JSON.stringify(accounts));
           }
         }
-        router.push('/'); // Redirect to Home page upon successful login
+        router.push('/');
       } catch (error) {
         setErrorMessage('Failed to sign in. Please try again.');
       }
@@ -152,7 +152,7 @@ export default function Login() {
             Remember Me
           </p>
           <p className="text-center mt-8">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/signup" className="text-blue-800 hover:underline">
               Sign Up
             </Link>

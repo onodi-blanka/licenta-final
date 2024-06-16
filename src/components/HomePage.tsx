@@ -2,10 +2,10 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { IoMdNotifications } from 'react-icons/io';
 import { BiMessageRoundedDetail } from 'react-icons/bi';
-import Dalle3MockAPI from './Dalle3API';
+// import Dalle3MockAPI from './Dalle3API';
 import MyImg from './MyImg';
 import useDebounce from '../app/hooks/debounce';
-import { usePicturesByUser } from '../app/hooks//firebase/usePictures';
+// import { usePicturesByUser } from '../app/hooks//firebase/usePictures';
 import { useRouter } from 'next/navigation';
 import ImageGrid from '@/components/ImageGrid';
 import { User } from 'firebase/auth';
@@ -17,7 +17,6 @@ const HomePage: React.FC = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 1000);
   const [currentImage, setCurrentImage] = useState<string>('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [viewPersonalPictures, setViewPersonalPictures] = useState(true);
   const { pictures, loading, error } = useAllPictures();
 
   // const personalPics = pictures.filter((pic) => {
@@ -80,12 +79,6 @@ const HomePage: React.FC = () => {
           onClick={handleProfile}>
           UserAccount Icon
         </button>
-      </div>
-      <div className="p-4">
-        <Dalle3MockAPI
-          searchQuery={debouncedSearchQuery}
-          setCurrentImage={setCurrentImage}
-        />
       </div>
       <ImageGrid pictures={pictures} />
     </div>

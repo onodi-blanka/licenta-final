@@ -14,7 +14,7 @@ export const fetchFromChatGPTAPI = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // Authorization: 'Bearer ',
+        Authorization: 'Bearer ',
       },
       body: JSON.stringify({
         model: 'dall-e-3',

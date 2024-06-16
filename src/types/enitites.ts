@@ -10,12 +10,10 @@ export interface User {
 export interface Picture {
   id: string;
   imageUrl: string;
-  createdBy:
-    | {
-        userId: string;
-        userEmail: string;
-      }
-    | string;
+  createdBy: {
+    userId: string;
+    userEmail: string;
+  };
   createdAt: Date;
   likesCount: number;
   groups: string[];
