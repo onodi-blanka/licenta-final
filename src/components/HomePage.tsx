@@ -80,6 +80,7 @@ const HomePage: React.FC = () => {
           UserAccount Icon
         </button>
       </div>
+
       <ImageGrid pictures={pictures} />
     </div>
   );

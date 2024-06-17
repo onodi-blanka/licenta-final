@@ -16,7 +16,7 @@ const Profile = () => {
   const [currentCollection, setCurrentCollection] = useState<string | null>(
     null,
   );
-  const collections = ['Generated pictures', 'coolection', 'dogs', 'cats'];
+  const collections = ['Generated pictures'];
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -51,12 +51,55 @@ const Profile = () => {
       <div>My profile settings</div>
       <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-6">
         {collections.map((collection) => (
-          <div
-            key={collection}
-            className="cursor-pointer border rounded-lg p-4 text-center"
-            onClick={() => handleOpenCollection(collection)}>
+          <div>
+            {pictures.length > 0 &&
+              (pictures.length < 3 ? (
+                <div
+                  key={collection}
+                  className="cursor-pointer border p-3 rounded-lg text-center shadow-lg"
+                  onClick={() => handleOpenCollection(collection)}>
+                  <div className="flex flex-row gap-1">
+                    <Image
+                      alt="img"
+                      src={pictures[0].imageUrl}
+                      width={200}
+                      height={200}
+                      className="aspec"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  key={collection}
+                  className="cursor-pointer border p-3 rounded-lg text-center shadow-lg"
+                  onClick={() => handleOpenCollection(collection)}>
+                  <div className="flex flex-row gap-1">
+                    <Image
+                      alt="img"
+                      src={pictures[0].imageUrl}
+                      width={200}
+                      height={200}
+                      className="aspec"
+                    />
+                    <div className="flex flex-col gap-1">
+                      <Image
+                        alt="img"
+                        src={pictures[1].imageUrl}
+                        width={100}
+                        height={100}
+                        className=""
+                      />
+                      <Image
+                        alt="img"
+                        src={pictures[2].imageUrl}
+                        width={100}
+                        height={100}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             <div className="font-bold">{collection}</div>
-            {/* Here you can add a preview of images */}
           </div>
         ))}
       </div>
@@ -69,7 +112,7 @@ const Profile = () => {
             </h2>
           </div>
           <div className="mb-16 flex flex-col gap-3 items-center overflow-y-scroll max-h-fit ">
-            {pictures.map((pic) => (
+            {filteredPictures.map((pic) => (
               <Image
                 key={pic.id}
                 src={pic.imageUrl}

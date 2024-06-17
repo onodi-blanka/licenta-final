@@ -1,10 +1,10 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebase/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 interface AuthContextType {
-  currentUser: any;
+  currentUser: User;
   userLoggedIn: boolean;
   isEmailUser: boolean;
   isGoogleUser: boolean;

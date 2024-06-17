@@ -5,6 +5,7 @@ export interface User {
   profilePictureUrl?: string;
   likedPictures: string[];
   profilePic: string;
+  pictureGroups: PictureGroup[];
 }
 
 export interface Picture {
@@ -20,11 +21,9 @@ export interface Picture {
   prompt?: string;
 }
 
-export interface Group {
+export interface PictureGroup {
   id: string;
-  groupName: string;
-  createdBy: string;
-  createdAt: Date;
-  isPublic: boolean;
-  pictures: string[];
+  name: string;
+  pictures: Picture[];
+  isPrivate: boolean;
 }
