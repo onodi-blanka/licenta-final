@@ -22,7 +22,7 @@ export interface Picture {
 }
 
 export interface PictureGroup {
-  id: string;
+  id?: string;
   name: string;
   pictures: Picture[];
   isPrivate: boolean;

@@ -1,40 +1,78 @@
 'use client';
-import Collection from '@/components/Collection';
 import Modal from '@/components/Modal';
 import React, { useState, useEffect } from 'react';
-import { User } from 'firebase/auth';
-import { usePicturesByUser } from '@/app/hooks/firebase/usePictures';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { useAuth } from '@/authContext';
+import { useUserImageGroups } from '@/app/hooks/firebase/useUserImageGroups';
 import Image from 'next/image';
-import ImageGrid from '@/components/ImageGrid';
+import { User, PictureGroup, Picture } from '@/types/enitites';
+import {
+  getPicturesByIds,
+  getPictureById,
+} from '../hooks/firebase/getPictureById';
 
-const Profile = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const { pictures, loading, error } = usePicturesByUser(
+const Profile: React.FC = () => {
+  const { currentUser } = useAuth();
+  const { imageGroups, loading, error } = useUserImageGroups(
     currentUser?.uid || '',
   );
-  const [currentCollection, setCurrentCollection] = useState<string | null>(
-    null,
-  );
-  const collections = ['Generated pictures'];
+  const [currentPictureGroup, setCurrentPictureGroup] =
+    useState<PictureGroup | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPictures, setCurrentPictures] = useState<Picture[]>([]);
+  const [thumbnails, setThumbnails] = useState<{ [key: string]: Picture[] }>(
+    {},
+  );
 
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
+    if (!currentUser) {
+      console.log('Please log in');
+    }
+  }, [currentUser]);
 
-  const handleOpenCollection = (collectionId: string) => {
-    setCurrentCollection(collectionId);
+  useEffect(() => {
+    const fetchThumbnails = async () => {
+      const thumbnailPromises = imageGroups.map(async (group) => {
+        const thumbnailIds = group.pictures.slice(0, 3).map((pic) => pic.id);
+        const thumbnailPictures = await getPicturesByIds(thumbnailIds);
+        return { groupId: group.id, pictures: thumbnailPictures };
+      });
+
+      const thumbnailResults = await Promise.all(thumbnailPromises);
+      const thumbnailsMap: { [key: string]: Picture[] } = {};
+      thumbnailResults.forEach((result) => {
+        thumbnailsMap[result.groupId] = result.pictures;
+      });
+      setThumbnails(thumbnailsMap);
+    };
+
+    if (imageGroups.length > 0) {
+      fetchThumbnails();
+    }
+  }, [imageGroups]);
+
+  useEffect(() => {
+    const fetchPictures = async () => {
+      if (currentPictureGroup) {
+        const pictures = await Promise.all(
+          currentPictureGroup.pictures.map(async (pic) => {
+            return await getPictureById(pic.id);
+          }),
+        );
+        setCurrentPictures(pictures.filter((pic) => pic !== null) as Picture[]);
+      }
+    };
+    fetchPictures();
+  }, [currentPictureGroup]);
+
+  const handleOpenPictureGroup = (group: PictureGroup) => {
+    setCurrentPictureGroup(group);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setCurrentCollection(null);
+    setCurrentPictureGroup(null);
+    setCurrentPictures([]);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -42,64 +80,55 @@ const Profile = () => {
 
   if (!currentUser) return <div>Please log in</div>;
 
-  const filteredPictures = pictures.filter(
-    (pic) => pic.createdBy.userId === currentUser?.uid,
-  );
-
   return (
     <div className="flex flex-col m-8 items-center">
       <div>My profile settings</div>
       <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-6">
-        {collections.map((collection) => (
-          <div>
-            {pictures.length > 0 &&
-              (pictures.length < 3 ? (
-                <div
-                  key={collection}
-                  className="cursor-pointer border p-3 rounded-lg text-center shadow-lg"
-                  onClick={() => handleOpenCollection(collection)}>
-                  <div className="flex flex-row gap-1">
-                    <Image
-                      alt="img"
-                      src={pictures[0].imageUrl}
-                      width={200}
-                      height={200}
-                      className="aspec"
-                    />
-                  </div>
+        {imageGroups.map((group) => (
+          <div
+            key={group.id}
+            className="cursor-pointer border p-3 rounded-lg text-center shadow-lg"
+            onClick={() => handleOpenPictureGroup(group)}>
+            {thumbnails[group.id] &&
+              thumbnails[group.id].length > 0 &&
+              (thumbnails[group.id].length < 3 ? (
+                <div className="flex flex-row gap-1">
+                  <Image
+                    alt="img"
+                    src={thumbnails[group.id][0].imageUrl}
+                    width={200}
+                    height={200}
+                    className="aspect-square"
+                  />
                 </div>
               ) : (
-                <div
-                  key={collection}
-                  className="cursor-pointer border p-3 rounded-lg text-center shadow-lg"
-                  onClick={() => handleOpenCollection(collection)}>
-                  <div className="flex flex-row gap-1">
+                <div className="flex flex-row gap-1">
+                  <Image
+                    alt="img"
+                    src={thumbnails[group.id][0].imageUrl}
+                    width={200}
+                    height={200}
+                    className="aspect-square"
+                  />
+                  <div className="flex flex-col gap-1">
                     <Image
                       alt="img"
-                      src={pictures[0].imageUrl}
-                      width={200}
-                      height={200}
-                      className="aspec"
+                      src={thumbnails[group.id][1].imageUrl}
+                      width={100}
+                      height={100}
+                      className="aspect-square"
                     />
-                    <div className="flex flex-col gap-1">
-                      <Image
-                        alt="img"
-                        src={pictures[1].imageUrl}
-                        width={100}
-                        height={100}
-                        className=""
-                      />
-                      <Image
-                        alt="img"
-                        src={pictures[2].imageUrl}
-                        width={100}
-                        height={100}
-                      />
-                    </div>
+                    <Image
+                      alt="img"
+                      src={thumbnails[group.id][2].imageUrl}
+                      width={100}
+                      height={100}
+                      className="aspect-square"
+                    />
                   </div>
                 </div>
               ))}
-            <div className="font-bold">{collection}</div>
+            <div className="font-bold">{group.name}</div>
           </div>
         ))}
       </div>
@@ -108,11 +137,11 @@ const Profile = () => {
         <div className="flex flex-col gap-6 max-h-screen">
           <div>
             <h2 className="text-2xl font-bold">
-              {currentCollection || 'Collection'}
+              {currentPictureGroup?.name || 'Collection'}
             </h2>
           </div>
-          <div className="mb-16 flex flex-col gap-3 items-center overflow-y-scroll max-h-fit ">
-            {filteredPictures.map((pic) => (
+          <div className="mb-16 flex flex-col gap-3 items-center overflow-y-scroll max-h-fit">
+            {currentPictures.map((pic) => (
               <Image
                 key={pic.id}
                 src={pic.imageUrl}

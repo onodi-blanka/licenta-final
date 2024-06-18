@@ -5,8 +5,8 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { User } from '../types/enitites';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { User, PictureGroup } from '../types/enitites';
 
 export const doCreateUserWithEmailAndPassword = async (
   email: string,
@@ -19,16 +19,32 @@ export const doCreateUserWithEmailAndPassword = async (
   );
   const user = userCredential.user;
 
-  const userData: User = {
+  // Create a new document reference for the default picture group
+  const defaultGroupRef = doc(collection(db, 'pictureGroups'));
+  const defaultGroupId = defaultGroupRef.id;
+
+  const defaultPictureGroup: PictureGroup = {
+    id: defaultGroupId,
+    name: 'Generated Images',
+    pictures: [],
+    isPrivate: true,
+  };
+
+  const userData: Partial<User> = {
     id: user.uid,
     username: email, // You can customize this field as needed
     email: email,
     likedPictures: [],
     profilePic: '',
+    pictureGroups: [defaultPictureGroup],
   };
 
   // Add user data to Firestore
   await setDoc(doc(db, 'users', user.uid), userData);
+
+  console.log(
+    `Created new user with ID ${user.uid} and added default picture group`,
+  );
 
   return userCredential;
 };
