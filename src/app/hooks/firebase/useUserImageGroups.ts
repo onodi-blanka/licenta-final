@@ -1,14 +1,9 @@
 import { useState, useEffect } from 'react';
-import { db } from '@/firebase/firebase';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  updateDoc,
-} from 'firebase/firestore';
+import useFetchUserData from './useFetchUserData';
+import useUpdateUserData from './useUpdateUserData';
 import { Picture, PictureGroup } from '@/types/enitites';
+import { db } from '@/firebase/firebase';
+import { doc, collection, arrayRemove, updateDoc } from 'firebase/firestore';
 
 interface UseUserImageGroupsResult {
   imageGroups: PictureGroup[];
@@ -20,138 +15,104 @@ interface UseUserImageGroupsResult {
     pictureId: string,
     groupName: string,
   ) => Promise<void>;
+  toggleGroupPrivacy: (groupId: string) => Promise<void>;
+  deletePictureGroup: (groupId: string) => Promise<void>;
+  removePictureFromGroup: (pictureId: string, groupId: string) => Promise<void>;
 }
 
 export const useUserImageGroups = (
   userId: string,
 ): UseUserImageGroupsResult => {
   const [imageGroups, setImageGroups] = useState<PictureGroup[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    userData,
+    loading: fetchLoading,
+    error: fetchError,
+    fetchUserData,
+  } = useFetchUserData(userId);
+  const {
+    loading: updateLoading,
+    error: updateError,
+    updateUserData,
+  } = useUpdateUserData();
+
+  const loading = fetchLoading || updateLoading;
+  const error = fetchError || updateError;
 
   const fetchImageGroups = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const q = query(collection(db, 'users'), where('id', '==', userId));
-      const querySnapshot = await getDocs(q);
-      const userData = querySnapshot.docs.map((doc) => doc.data())[0];
-
-      let groups: PictureGroup[] = [];
-      if (userData) {
-        groups = userData.pictureGroups || [];
-      }
-
-      setImageGroups(groups);
-      console.log('Fetched image groups:', groups);
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching image groups:', err.message);
-    } finally {
-      setLoading(false);
-    }
+    await fetchUserData();
   };
 
   useEffect(() => {
-    if (userId) {
-      fetchImageGroups();
+    if (userData) {
+      setImageGroups(userData.pictureGroups || []);
     }
-  }, [userId]);
+  }, [userData]);
 
   const addPictureToGroup = async (pictureId: string, groupId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const userDocRef = collection(db, 'users');
-      const q = query(userDocRef, where('id', '==', userId));
-      const querySnapshot = await getDocs(q);
-      const userDoc = querySnapshot.docs[0];
+    const groupIndex = imageGroups.findIndex((group) => group.id === groupId);
+    if (groupIndex === -1) throw new Error('Group not found');
 
-      if (!userDoc) {
-        throw new Error('User not found');
-      }
+    const updatedGroups = [...imageGroups];
+    updatedGroups[groupIndex].pictures.push({ id: pictureId } as Picture);
 
-      const userData = userDoc.data();
-      const groupIndex = userData.pictureGroups.findIndex(
-        (group: PictureGroup) => group.id === groupId,
-      );
-
-      if (groupIndex === -1) {
-        throw new Error('Group not found');
-      }
-
-      userData.pictureGroups[groupIndex].pictures.push({
-        id: pictureId,
-      } as Picture);
-
-      await updateDoc(doc(userDocRef, userDoc.id), {
-        pictureGroups: userData.pictureGroups,
-      });
-
-      setImageGroups((prevGroups) => {
-        const updatedGroups = [...prevGroups];
-        updatedGroups[groupIndex].pictures.push({ id: pictureId } as Picture);
-        return updatedGroups;
-      });
-
-      console.log(`Added picture ${pictureId} to group ${groupId}`);
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error adding picture to group:', err.message);
-    } finally {
-      setLoading(false);
-    }
+    await updateUserData(userId, { pictureGroups: updatedGroups });
+    setImageGroups(updatedGroups);
   };
 
   const createGroupAndAddPicture = async (
     pictureId: string,
     groupName: string,
   ) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const userDocRef = collection(db, 'users');
-      const q = query(userDocRef, where('id', '==', userId));
-      const querySnapshot = await getDocs(q);
-      const userDoc = querySnapshot.docs[0];
+    const newGroupId = doc(collection(db, 'pictureGroups')).id;
+    const newGroup: PictureGroup = {
+      id: newGroupId,
+      name: groupName,
+      pictures: [{ id: pictureId } as Picture],
+      isPrivate: false,
+    };
 
-      if (!userDoc) {
-        throw new Error('User not found');
-      }
+    const updatedGroups = [newGroup, ...imageGroups];
+    await updateUserData(userId, { pictureGroups: updatedGroups });
+    setImageGroups(updatedGroups);
+  };
 
-      const userData = userDoc.data();
+  const toggleGroupPrivacy = async (groupId: string) => {
+    const groupIndex = imageGroups.findIndex((group) => group.id === groupId);
+    if (groupIndex === -1) throw new Error('Group not found');
 
-      if (!userData.pictureGroups) {
-        userData.pictureGroups = [];
-      }
+    const updatedGroups = [...imageGroups];
+    updatedGroups[groupIndex].isPrivate = !updatedGroups[groupIndex].isPrivate;
 
-      const newGroupRef = doc(collection(db, 'pictureGroups'));
-      const newGroupId = newGroupRef.id;
+    await updateUserData(userId, { pictureGroups: updatedGroups });
+    setImageGroups(updatedGroups);
+  };
 
-      const newGroup: PictureGroup = {
-        id: newGroupId,
-        name: groupName,
-        pictures: [{ id: pictureId } as Picture],
-        isPrivate: false,
-      };
+  const deletePictureGroup = async (groupId: string) => {
+    const updatedGroups = imageGroups.filter((group) => group.id !== groupId);
+    await updateUserData(userId, { pictureGroups: updatedGroups });
+    setImageGroups(updatedGroups);
+  };
 
-      userData.pictureGroups.push(newGroup);
+  const removePictureFromGroup = async (pictureId: string, groupId: string) => {
+    console.log(pictureId);
+    const groupIndex = imageGroups.findIndex((group) => group.id === groupId);
+    if (groupIndex === -1) throw new Error('Group not found');
 
-      await updateDoc(doc(userDocRef, userDoc.id), {
-        pictureGroups: userData.pictureGroups,
-      });
+    const updatedGroups = [...imageGroups];
+    updatedGroups[groupIndex].pictures = updatedGroups[
+      groupIndex
+    ].pictures.filter((picture) => picture.id !== pictureId);
 
-      setImageGroups((prevGroups) => [newGroup, ...prevGroups]);
+    await updateUserData(userId, { pictureGroups: updatedGroups });
 
-      console.log(
-        `Created new group ${groupName} with ID ${newGroupId} and added picture ${pictureId}`,
-      );
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error creating group and adding picture:', err.message);
-    } finally {
-      setLoading(false);
-    }
+    // Update the picture document to remove the groupId
+    const pictureRef = doc(db, 'pictures', pictureId);
+    await updateDoc(pictureRef, {
+      groups: arrayRemove(groupId),
+    });
+
+    setImageGroups(updatedGroups);
   };
 
   return {
@@ -161,5 +122,8 @@ export const useUserImageGroups = (
     fetchImageGroups,
     addPictureToGroup,
     createGroupAndAddPicture,
+    toggleGroupPrivacy,
+    deletePictureGroup,
+    removePictureFromGroup,
   };
 };

@@ -10,7 +10,7 @@ export const getPictureById = async (
     const pictureDoc = await getDoc(pictureRef);
 
     if (pictureDoc.exists()) {
-      return pictureDoc.data() as Picture;
+      return { id: pictureDoc.id, ...pictureDoc.data() } as Picture;
     } else {
       console.error('Picture not found');
       return null;
@@ -29,7 +29,10 @@ export const getPicturesByIds = async (
       pictureIds.map(async (id) => {
         const pictureRef = doc(db, 'pictures', id);
         const pictureDoc = await getDoc(pictureRef);
-        return pictureDoc.exists() ? (pictureDoc.data() as Picture) : null;
+        if (pictureDoc.exists()) {
+          return { id: pictureDoc.id, ...pictureDoc.data() } as Picture;
+        }
+        return null;
       }),
     );
     return pictures.filter((pic) => pic !== null) as Picture[];

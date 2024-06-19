@@ -5,12 +5,14 @@ import Image from 'next/image';
 import { useAuth } from '@/authContext';
 import { useUserImageGroups } from '@/app/hooks/firebase/useUserImageGroups';
 import { Picture, PictureGroup } from '@/types/enitites';
+import { IoMdHeart } from 'react-icons/io';
 
 interface ImageGridProps {
   pictures: Picture[];
+  onLikePicture: (pictureId: string) => void;
 }
 
-const ImageGrid: React.FC<ImageGridProps> = ({ pictures }) => {
+const ImageGrid: React.FC<ImageGridProps> = ({ pictures, onLikePicture }) => {
   const { currentUser } = useAuth();
   const {
     imageGroups,
@@ -19,10 +21,12 @@ const ImageGrid: React.FC<ImageGridProps> = ({ pictures }) => {
     addPictureToGroup,
     createGroupAndAddPicture,
   } = useUserImageGroups(currentUser?.uid || '', pictures);
+
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showGroups, setShowGroups] = useState<boolean>(false);
   const [newGroupName, setNewGroupName] = useState<string>('');
   const [hoveredPicture, setHoveredPicture] = useState<Picture | null>(null);
+  const [likedPictures, setLikedPictures] = useState<Set<string>>(new Set());
 
   const handleImageClick = (imageUrl: string) => setSelectedImage(imageUrl);
 
@@ -58,6 +62,19 @@ const ImageGrid: React.FC<ImageGridProps> = ({ pictures }) => {
     setShowGroups(false);
     setHoveredPicture(null);
     console.log('Resetting group state');
+  };
+
+  const handleLikePicture = (pictureId: string) => {
+    onLikePicture(pictureId);
+    setLikedPictures((prev) => {
+      const newLikedPictures = new Set(prev);
+      if (newLikedPictures.has(pictureId)) {
+        newLikedPictures.delete(pictureId);
+      } else {
+        newLikedPictures.add(pictureId);
+      }
+      return newLikedPictures;
+    });
   };
 
   if (loading) return <p>Loading...</p>;
@@ -96,6 +113,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({ pictures }) => {
                   onAddToGroup={handleAddToGroup}
                   onCreateNewGroup={handleCreateNewGroup}
                   onNewGroupNameChange={setNewGroupName}
+                  isLiked={likedPictures.has(picture.id)}
+                  onLikePicture={handleLikePicture}
                 />
               )}
             </div>
@@ -118,6 +137,8 @@ interface HoverDetailsProps {
   onAddToGroup: (groupId: string) => void;
   onCreateNewGroup: () => void;
   onNewGroupNameChange: (name: string) => void;
+  isLiked: boolean;
+  onLikePicture: (pictureId: string) => void;
 }
 
 const HoverDetails: React.FC<HoverDetailsProps> = ({
@@ -129,44 +150,53 @@ const HoverDetails: React.FC<HoverDetailsProps> = ({
   onAddToGroup,
   onCreateNewGroup,
   onNewGroupNameChange,
-}) => (
-  <div className="absolute bottom-0 left-0 w-full h-full p-4 flex flex-col z-50 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black bg-opacity-50 text-white rounded">
-    <div className="flex flex-row absolute top-2 right-2 text-white text-2xl">
-      <button className="z-50" onClick={(e) => onShowGroups(e, picture)}>
-        <MdExpandMore />
-      </button>
-    </div>
-    {showGroups && (
-      <div className="absolute top-12 right-2 bg-white text-black rounded shadow-md p-2">
-        <p className="font-bold mb-2">Select a group:</p>
-        {imageGroups.map((group) => (
-          <p
-            key={group.id}
-            className="cursor-pointer hover:bg-gray-200 p-1"
-            onClick={() => onAddToGroup(group.id)}>
-            {group.name}
-          </p>
-        ))}
-        <div className="mt-2">
-          <input
-            type="text"
-            className="p-1 border rounded w-full"
-            placeholder="New group name"
-            value={newGroupName}
-            onChange={(e) => onNewGroupNameChange(e.target.value)}
+  isLiked,
+  onLikePicture,
+}) => {
+  return (
+    <div className="absolute bottom-0 left-0 w-full h-full p-4 flex flex-col z-50 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black bg-opacity-50 text-white rounded">
+      <div className="flex flex-row absolute top-2 right-2 text-white text-2xl">
+        <button className="z-50" onClick={(e) => onShowGroups(e, picture)}>
+          <MdExpandMore />
+        </button>
+        <button className="z-50" onClick={() => onLikePicture(picture.id)}>
+          <IoMdHeart
+            className={`hover:animate-pulse ${isLiked ? 'text-red-500' : 'text-white'}`}
           />
-          <button
-            className="bg-blue-500 text-white p-1 rounded mt-1"
-            onClick={onCreateNewGroup}>
-            Create Group
-          </button>
-        </div>
+        </button>
       </div>
-    )}
-    <p className="font-bold">{picture.prompt || 'No prompt'}</p>
-    <p className="text-sm">Created by: {picture.createdBy.userEmail}</p>
-  </div>
-);
+      {showGroups && (
+        <div className="absolute top-12 right-2 bg-white text-black rounded shadow-md p-2">
+          <p className="font-bold mb-2">Select a group:</p>
+          {imageGroups.map((group) => (
+            <p
+              key={group.id}
+              className="cursor-pointer hover:bg-gray-200 p-1"
+              onClick={() => onAddToGroup(group.id)}>
+              {group.name}
+            </p>
+          ))}
+          <div className="mt-2">
+            <input
+              type="text"
+              className="p-1 border rounded w-full"
+              placeholder="New group name"
+              value={newGroupName}
+              onChange={(e) => onNewGroupNameChange(e.target.value)}
+            />
+            <button
+              className="bg-blue-500 text-white p-1 rounded mt-1"
+              onClick={onCreateNewGroup}>
+              Create Group
+            </button>
+          </div>
+        </div>
+      )}
+      <p className="font-bold">{picture.prompt || 'No prompt'}</p>
+      <p className="text-sm">Created by: {picture.createdBy.userEmail}</p>
+    </div>
+  );
+};
 
 interface FullscreenModalProps {
   imageUrl: string;

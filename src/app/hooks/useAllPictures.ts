@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db, auth } from '../../firebase/firebase';
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  increment,
+} from 'firebase/firestore';
+import { db } from '../../firebase/firebase';
 import { Picture } from '../../types/enitites';
 
 export const useAllPictures = () => {
@@ -13,20 +19,13 @@ export const useAllPictures = () => {
       setLoading(true);
       setError(null);
 
-      // if (!auth.currentUser) {
-      //   setError('User is not authenticated');
-      //   console.log('User is not authenticated');
-      //   setLoading(false);
-      //   return;
-      // }
-
       try {
-        console.log('Fetching pictures from Firestore');
+        // console.log('Fetching pictures from Firestore');
         const querySnapshot = await getDocs(collection(db, 'pictures'));
         const pics: Picture[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          console.log('Document data:', data);
+          // console.log('Document data:', data);
           if (data.createdAt && data.createdAt.toDate) {
             data.createdAt = data.createdAt.toDate();
           } else {
@@ -43,7 +42,7 @@ export const useAllPictures = () => {
           });
         });
         setPictures(pics);
-        console.log('Fetched pictures:', pics);
+        // console.log('Fetched pictures:', pics);
       } catch (error) {
         setError('Failed to fetch pictures.');
         console.error('Error fetching pictures:', error);
@@ -55,5 +54,24 @@ export const useAllPictures = () => {
     fetchPictures();
   }, []);
 
-  return { pictures, loading, error };
+  const likePicture = async (pictureId: string) => {
+    try {
+      const pictureDocRef = doc(db, 'pictures', pictureId);
+      await updateDoc(pictureDocRef, {
+        likesCount: increment(1),
+      });
+      setPictures((prevPictures) =>
+        prevPictures.map((pic) =>
+          pic.id === pictureId
+            ? { ...pic, likesCount: pic.likesCount + 1 }
+            : pic,
+        ),
+      );
+    } catch (error) {
+      console.error('Error liking picture:', error);
+      setError('Failed to like picture.');
+    }
+  };
+
+  return { pictures, loading, error, likePicture };
 };
