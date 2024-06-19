@@ -2,6 +2,7 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { IoMdNotifications } from 'react-icons/io';
 import { BiMessageRoundedDetail } from 'react-icons/bi';
+import { FaRegUser } from 'react-icons/fa';
 // import Dalle3MockAPI from './Dalle3API';
 import MyImg from './MyImg';
 import useDebounce from '../app/hooks/debounce';
@@ -77,7 +78,7 @@ const HomePage: React.FC = () => {
         <button
           className="px-4 py-2 flex items-center rounded-full border-transparent hover:bg-gray-300"
           onClick={handleProfile}>
-          UserAccount Icon
+          <FaRegUser />
         </button>
       </div>
 

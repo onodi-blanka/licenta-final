@@ -14,6 +14,7 @@ interface UseUserImageGroupsResult {
   imageGroups: PictureGroup[];
   loading: boolean;
   error: string | null;
+  fetchImageGroups: () => Promise<void>;
   addPictureToGroup: (pictureId: string, groupId: string) => Promise<void>;
   createGroupAndAddPicture: (
     pictureId: string,
@@ -28,30 +29,30 @@ export const useUserImageGroups = (
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchImageGroups = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const q = query(collection(db, 'users'), where('id', '==', userId));
-        const querySnapshot = await getDocs(q);
-        const userData = querySnapshot.docs.map((doc) => doc.data())[0];
+  const fetchImageGroups = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const q = query(collection(db, 'users'), where('id', '==', userId));
+      const querySnapshot = await getDocs(q);
+      const userData = querySnapshot.docs.map((doc) => doc.data())[0];
 
-        let groups: PictureGroup[] = [];
-        if (userData) {
-          groups = userData.pictureGroups || [];
-        }
-
-        setImageGroups(groups);
-        console.log('Fetched image groups:', groups);
-      } catch (err: any) {
-        setError(err.message);
-        console.error('Error fetching image groups:', err.message);
-      } finally {
-        setLoading(false);
+      let groups: PictureGroup[] = [];
+      if (userData) {
+        groups = userData.pictureGroups || [];
       }
-    };
 
+      setImageGroups(groups);
+      console.log('Fetched image groups:', groups);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching image groups:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (userId) {
       fetchImageGroups();
     }
@@ -157,6 +158,7 @@ export const useUserImageGroups = (
     imageGroups,
     loading,
     error,
+    fetchImageGroups,
     addPictureToGroup,
     createGroupAndAddPicture,
   };
