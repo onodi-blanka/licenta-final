@@ -19,6 +19,7 @@ export const usePicturesByUser = (userId: string) => {
         { ...picture, id: docRef.id },
       ]);
     } catch (err) {
+      // @ts-expect-error error type
       setError(err.message);
     } finally {
       setLoading(false);
@@ -29,14 +30,19 @@ export const usePicturesByUser = (userId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const q = query(collection(db, 'pictures'));
+      console.log('fetching pictures for user', userId);
+
+      const q = query(
+        collection(db, 'pictures'),
+        where('createdBy.userId', '==', userId),
+      );
       const querySnapshot = await getDocs(q);
       const userPictures: Picture[] = [];
       querySnapshot.forEach((doc) => {
         userPictures.push({ id: doc.id, ...doc.data() } as Picture);
       });
       setPictures(userPictures);
-    } catch (err) {
+    } catch (err: any) {
       console.log('here it fails');
       console.log(userId);
       setError(err.message);

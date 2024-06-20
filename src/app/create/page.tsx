@@ -7,12 +7,14 @@ import { auth, db, storage } from '@/firebase/firebase';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { User } from 'firebase/auth';
-import { addDoc, collection } from 'firebase/firestore';
-import { LuRectangleHorizontal } from 'react-icons/lu';
-import { LuRectangleVertical } from 'react-icons/lu';
-import { LuSquare } from 'react-icons/lu';
+import { addDoc, collection, doc, getDoc, updateDoc } from 'firebase/firestore';
+import {
+  LuRectangleHorizontal,
+  LuRectangleVertical,
+  LuSquare,
+} from 'react-icons/lu';
 
-export default function CreateWallpaper() {
+const CreateWallpaper: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('');
   const [sizing, setSizing] = useState<ImageSizes>('1024x1024');
   const { image, isLoading, fetchImage } = useFetchImage();
@@ -45,13 +47,12 @@ export default function CreateWallpaper() {
   const handleSaveToFirebase = async () => {
     if (image && currentUser) {
       try {
-        console.log(currentUser);
         const imageName = `wallpapers/${Date.now()}.png`;
         const imageRef = ref(storage, imageName);
         await uploadString(imageRef, image, 'data_url');
         const imageUrl = await getDownloadURL(imageRef);
 
-        await addDoc(collection(db, 'pictures'), {
+        const newPictureRef = await addDoc(collection(db, 'pictures'), {
           imageUrl,
           prompt,
           createdBy: {
@@ -63,21 +64,53 @@ export default function CreateWallpaper() {
           groups: [],
         });
 
+        await updateUserPictureGroups(currentUser.uid, newPictureRef.id);
+
         console.log('Image saved to Firebase:', imageUrl);
         router.push('/');
       } catch (error: any) {
         if (error.code === 'permission-denied') {
-          // Specific error message for permission issues
           console.error(
             'Error saving image to Firebase (permission denied):',
             error,
           );
-          // You can display this error to the user or log it for debugging
         } else {
           console.error('Error saving image to Firebase:', error);
         }
       }
     }
+  };
+
+  const updateUserPictureGroups = async (userId: string, pictureId: string) => {
+    const userDocRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) {
+      console.error('User document not found');
+      return;
+    }
+
+    const userData = userDoc.data();
+    let pictureGroups = userData.pictureGroups || [];
+
+    let generatedImagesGroup = pictureGroups.find(
+      (group: { name: string }) => group.name === 'Generated Images',
+    );
+
+    if (!generatedImagesGroup) {
+      generatedImagesGroup = {
+        id: doc(collection(db, 'pictureGroups')).id,
+        name: 'Generated Images',
+        pictures: [],
+        isPrivate: true,
+      };
+      pictureGroups.push(generatedImagesGroup);
+    }
+
+    generatedImagesGroup.pictures.push({ id: pictureId });
+
+    await updateDoc(userDocRef, { pictureGroups });
+
+    console.log('Updated user picture groups:', pictureGroups);
   };
 
   const handleGoBackToMain = () => {
@@ -100,21 +133,27 @@ export default function CreateWallpaper() {
           <div className="flex flex-row gap-6 self-center">
             <LuSquare
               onClick={() => setSizing('1024x1024')}
-              className={`text-3xl ${sizing === '1024x1024' && 'text-green-500 bg-gray-300'} hover:bg-gray-200 cursor-pointer p-1`}
+              className={`text-3xl ${
+                sizing === '1024x1024' && 'text-green-500 bg-gray-300'
+              } hover:bg-gray-200 cursor-pointer p-1`}
             />
             <LuRectangleHorizontal
               onClick={() => setSizing('1792x1024')}
-              className={`text-3xl ${sizing === '1792x1024' && 'text-green-500 bg-gray-300'} hover:bg-gray-200 cursor-pointer p-1`}
+              className={`text-3xl ${
+                sizing === '1792x1024' && 'text-green-500 bg-gray-300'
+              } hover:bg-gray-200 cursor-pointer p-1`}
             />
             <LuRectangleVertical
               onClick={() => setSizing('1024x1792')}
-              className={`text-3xl ${sizing === '1024x1792' && 'text-green-500 bg-gray-300'} hover:bg-gray-200 cursor-pointer p-1`}
+              className={`text-3xl ${
+                sizing === '1024x1792' && 'text-green-500 bg-gray-300'
+              } hover:bg-gray-200 cursor-pointer p-1`}
             />
           </div>
           <button
             onClick={handleGenerateImage}
             disabled={isLoading || !prompt || !currentUser}
-            className={`w-full py-2 font-bold rounded transition-colors duration-300 ${
+            className={`w-full py-2 font-bold rounded transition-colors duration-1000 ${
               isLoading || !prompt || !currentUser
                 ? 'bg-gray-200 text-black cursor-not-allowed'
                 : 'bg-green-800 text-white hover:bg-green-900'
@@ -147,4 +186,6 @@ export default function CreateWallpaper() {
       )}
     </div>
   );
-}
+};
+
+export default CreateWallpaper;
